@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from materials.models import Course, Lesson
 
 
 class CustomUserManager(BaseUserManager):
@@ -32,8 +31,7 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractUser):
     """
     Кастомная модель пользователя.
-    Наследуемся от AbstractUser, чтобы взять всё от обычного User,
-    но меняем поле для авторизации на email.
+    Наследуемся от AbstractUser, но меняем поле для авторизации на email.
     """
     username = None  # убираем поле username
     email = models.EmailField(unique=True, verbose_name='Email')
@@ -58,13 +56,18 @@ class User(AbstractUser):
 
 
 class Payment(models.Model):
-    """Модель платежа с полями согласно ТЗ"""
+    """Модель платежа с поддержкой Stripe"""
 
     class PaymentMethod(models.TextChoices):
         CASH = 'cash', 'Наличные'
         TRANSFER = 'transfer', 'Перевод на счет'
+        STRIPE = 'stripe', 'Stripe'
 
-    # Основные поля
+    class PaymentStatus(models.TextChoices):
+        PENDING = 'pending', 'Ожидает оплаты'
+        PAID = 'paid', 'Оплачен'
+        FAILED = 'failed', 'Ошибка'
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -85,10 +88,16 @@ class Payment(models.Model):
         choices=PaymentMethod.choices,
         verbose_name='способ оплаты'
     )
+    payment_status = models.CharField(
+        max_length=10,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
+        verbose_name='статус оплаты'
+    )
 
-    # Оплаченный курс или урок (один из них может быть null)
+    # Оплаченный курс или урок (используем строки для избежания циклических импортов)
     paid_course = models.ForeignKey(
-        Course,
+        'materials.Course',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -96,7 +105,7 @@ class Payment(models.Model):
         verbose_name='оплаченный курс'
     )
     paid_lesson = models.ForeignKey(
-        Lesson,
+        'materials.Lesson',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -104,10 +113,35 @@ class Payment(models.Model):
         verbose_name='оплаченный урок'
     )
 
+    # Поля для Stripe
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID продукта в Stripe'
+    )
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID цены в Stripe'
+    )
+    stripe_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID сессии в Stripe'
+    )
+    stripe_payment_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Ссылка на оплату в Stripe'
+    )
+
     class Meta:
         verbose_name = 'Платеж'
         verbose_name_plural = 'Платежи'
-        ordering = ['-payment_date']  # Сортировка по умолчанию: сначала новые
+        ordering = ['-payment_date']
 
     def __str__(self):
         return f"{self.user.email} - {self.amount} руб. ({self.get_payment_method_display()})"
