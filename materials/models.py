@@ -7,7 +7,6 @@ class Course(models.Model):
     preview = models.ImageField(upload_to='courses/', verbose_name='Превью', blank=True, null=True)
     description = models.TextField(verbose_name='Описание')
 
-    # Добавляем поле владельца
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -32,7 +31,6 @@ class Lesson(models.Model):
     video_link = models.URLField(verbose_name='Ссылка на видео', blank=True, null=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons', verbose_name='Курс')
 
-    # Добавляем поле владельца
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -48,3 +46,33 @@ class Lesson(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Subscription(models.Model):
+    """
+    Модель подписки пользователя на обновления курса
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='Пользователь'
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='Курс'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата подписки'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'course')  # чтобы пользователь не мог подписаться дважды
+
+    def __str__(self):
+        return f"{self.user.email} - {self.course.title}"
