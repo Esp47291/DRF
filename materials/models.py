@@ -34,7 +34,10 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
-    # ... поля остаются без изменений
+    title = models.CharField(max_length=200, verbose_name='Название')
+    description = models.TextField(verbose_name='Описание')
+    preview = models.ImageField(upload_to='lessons/', verbose_name='Превью', blank=True, null=True)
+    video_link = models.URLField(verbose_name='Ссылка на видео', blank=True, null=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons', verbose_name='Курс')
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -53,6 +56,13 @@ class Lesson(models.Model):
         auto_now=True,
         verbose_name='Дата обновления'
     )
+
+    class Meta:
+        verbose_name = 'Урок'
+        verbose_name_plural = 'Уроки'
+
+    def __str__(self):
+        return self.title
 
 
 class Subscription(models.Model):
