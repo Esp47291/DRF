@@ -2,9 +2,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
+    path("", RedirectView.as_view(url="/api/", permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('materials.urls')),
     path('api/', include('users.urls')),

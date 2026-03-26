@@ -8,11 +8,18 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-&!*#bph&r#tg8n$)wx38^*f2f&lw$7zh&3k)ba9@o$u*5z10*!"
+# Load env early so settings below can use it.
+# In Docker we pass env via env_file, but locally .env is convenient too.
+load_dotenv()
 
-DEBUG = True
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-&!*#bph&r#tg8n$)wx38^*f2f&lw$7zh&3k)ba9@o$u*5z10*!",
+)
 
-ALLOWED_HOSTS = []
+DEBUG = os.getenv("DEBUG", "True").lower() in ("1", "true", "yes", "on")
+
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -61,14 +68,24 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', 5432),
-    }
+    # In Docker/prod we use Postgres via env vars.
+    # In CI/local (when POSTGRES_DB is not set) we fall back to sqlite3,
+    # so tests can run without provisioning a DB service.
+    "default": (
+        {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("POSTGRES_PORT", 5432),
+        }
+        if os.getenv("POSTGRES_DB")
+        else {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -108,10 +125,6 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
-
-
-load_dotenv()
-
 
 # Celery Configuration
 CELERY_BROKER_URL = f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', 6379)}/{os.getenv('REDIS_DB', 0)}"
