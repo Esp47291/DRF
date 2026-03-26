@@ -43,6 +43,41 @@ sudo ufw enable
 sudo ufw status verbose
 ```
 
+### Автозапуск деплоя (systemd)
+Если нужно, чтобы приложение поднималось после перезагрузки сервера, можно создать systemd unit:
+
+```bash
+sudo nano /etc/systemd/system/drf.service
+```
+
+Содержимое:
+
+```ini
+[Unit]
+Description=DRF docker-compose app
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/DRF
+ExecStart=/usr/bin/docker-compose up -d --build
+ExecStop=/usr/bin/docker-compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Далее:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now drf.service
+sudo systemctl status drf.service
+```
+
 ### CI/CD (GitHub Actions)
 Workflow лежит в `.github/workflows/ci_cd.yml` и запускается на каждый `push`.
 
