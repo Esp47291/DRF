@@ -1,9 +1,11 @@
-from django.core.management.base import BaseCommand
-from users.models import User, Payment
-from materials.models import Course, Lesson
-from datetime import timedelta
-from django.utils import timezone
 import random
+from datetime import timedelta
+
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from materials.models import Course, Lesson
+from users.models import Payment, User
 
 
 class Command(BaseCommand):
@@ -60,7 +62,7 @@ class Command(BaseCommand):
             payment_method = random.choice(payment_methods)
 
             # Создаем платеж
-            payment = Payment.objects.create(
+            Payment.objects.create(
                 user=user,
                 payment_date=payment_date,
                 amount=amount,

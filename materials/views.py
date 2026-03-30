@@ -1,9 +1,12 @@
-from rest_framework import viewsets, generics
-from django.utils import timezone
 from datetime import timedelta
+
+from django.utils import timezone
+from rest_framework import generics, viewsets
+
+from users.tasks import send_course_update_email  # импортируем задачу Celery
+
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
-from users.tasks import send_course_update_email  # импортируем задачу Celery
 
 
 class CourseViewSet(viewsets.ModelViewSet):

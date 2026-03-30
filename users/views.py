@@ -1,11 +1,10 @@
-from rest_framework import generics, filters, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from users.models import Payment, User
-from users.serializers import PaymentSerializer, UserSerializer, UserRegistrationSerializer
+from users.serializers import PaymentSerializer, UserRegistrationSerializer, UserSerializer
 
 
 class PaymentFilter(django_filters.FilterSet):
